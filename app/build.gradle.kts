@@ -42,15 +42,28 @@ android {
 }
 
 dependencies {
+    // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.navigation.compose)
+
+    // retrofit 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+
+    // shell su
     implementation(libs.libsu.core)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+
+    // material icons
+    implementation(libs.compose.icons.core)
+    implementation(libs.compose.icons.extended)
+
+    
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)

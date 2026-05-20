@@ -1,4 +1,8 @@
 package com.fryda.app
 
-class FridaApplication {
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class FridaApplication : Application() {
 }
