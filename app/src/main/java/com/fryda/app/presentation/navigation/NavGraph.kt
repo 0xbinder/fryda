@@ -12,7 +12,6 @@ import com.fryda.app.presentation.logs.LogsScreen
 import com.fryda.app.presentation.servers.ServersScreen
 import com.fryda.app.presentation.settings.SettingsScreen
 
-
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -24,7 +23,10 @@ fun NavGraph(
         modifier = Modifier.padding(paddingValues)
     ) {
         composable(Screen.Home.route) {
-            HomeScreen()
+            HomeScreen(
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToLogs = { navController.navigate(Screen.Logs.route) }
+            )
         }
         composable(Screen.Servers.route) {
             ServersScreen()

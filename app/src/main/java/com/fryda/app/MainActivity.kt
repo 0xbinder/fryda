@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.fryda.app.presentation.navigation.BottomNavBar
 import com.fryda.app.presentation.navigation.NavGraph
 import com.fryda.app.presentation.theme.FrydaTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,9 +24,6 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        BottomNavBar(navController = navController)
-                    }
                 ) { innerPadding ->
                     // Pass innerPadding to NavGraph instead of a Box wrapper
                     NavGraph(
