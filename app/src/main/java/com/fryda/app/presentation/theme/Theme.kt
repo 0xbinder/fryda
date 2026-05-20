@@ -1,5 +1,6 @@
 package com.fryda.app.presentation.theme
 
+
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -11,31 +12,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = AccentTealDark,
+    background = DarkBackground,
+    surface = CardBackgroundDark,
+    surfaceVariant = CardBackgroundDark,
+    onBackground = androidx.compose.ui.graphics.Color.White,
+    onSurface = androidx.compose.ui.graphics.Color.White,
+    onSurfaceVariant = TextGrayDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = AccentTealLight,
+    background = LightBackground,
+    surface = CardBackgroundLight,
+    surfaceVariant = CardBackgroundLight,
+    onBackground = androidx.compose.ui.graphics.Color.Black,
+    onSurface = androidx.compose.ui.graphics.Color.Black,
+    onSurfaceVariant = TextGrayLight
 )
 
 @Composable
 fun FrydaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
+    // Dynamic color is available on Android 12+ (Default is true)
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -44,13 +43,13 @@ fun FrydaTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
+        // Assuming Typography is defined in Type.kt inside the theme package
         typography = Typography,
         content = content
     )
