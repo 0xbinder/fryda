@@ -25,7 +25,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fryda.app.core.root.RootChecker
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -67,7 +66,7 @@ fun HomeScreen(
                             text = "FRYDA",
                             style = MaterialTheme.typography.displaySmall.copy(
                                 fontWeight = FontWeight.Black,
-                                letterSpacing = (-1).sp // Tighter look
+                                letterSpacing = (-1).sp
                             )
                         )
                         Text(
@@ -146,7 +145,7 @@ private fun StatusSection(status: RootChecker.RootStatus) {
 
     Surface(
         tonalElevation = 1.dp,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier.fillMaxWidth(),
         border = CardDefaults.outlinedCardBorder()
     ) {
@@ -179,7 +178,6 @@ private fun StatusSection(status: RootChecker.RootStatus) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
                 if (status.isRooted && !status.suBinaryPath.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
@@ -213,7 +211,7 @@ private fun MainDashboardCard(
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -267,7 +265,7 @@ private fun SpecBox(modifier: Modifier, label: String, value: String, icon: Imag
     Surface(
         modifier = modifier,
         tonalElevation = 1.dp,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(8.dp),
         border = CardDefaults.outlinedCardBorder()
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -284,7 +282,7 @@ private fun SpecBox(modifier: Modifier, label: String, value: String, icon: Imag
 private fun ActionItem(icon: ImageVector, title: String, desc: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(8.dp),
         color = Color.Transparent
     ) {
         Row(
@@ -294,7 +292,7 @@ private fun ActionItem(icon: ImageVector, title: String, desc: String, onClick: 
         ) {
             Surface(
                 modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Icon(icon, null, modifier = Modifier.padding(12.dp))

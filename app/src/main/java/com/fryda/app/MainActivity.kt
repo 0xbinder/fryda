@@ -17,11 +17,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
             FrydaTheme {
                 val navController = rememberNavController()
-
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                 ) { innerPadding ->
