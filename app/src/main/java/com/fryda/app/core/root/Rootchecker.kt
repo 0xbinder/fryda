@@ -1,6 +1,7 @@
 package com.fryda.app.core.root
 
 import android.content.Context
+import android.os.Build
 import com.topjohnwu.superuser.Shell
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,7 @@ class RootChecker @Inject constructor(
 ) {
     data class RootStatus(
         val isRooted: Boolean,
+        val architecture: String,
         val suBinaryPath: String? = null,
         val magiskVersion: String? = null,
         val kernelSuPresent: Boolean = false,
@@ -21,20 +23,22 @@ class RootChecker @Inject constructor(
     )
 
     suspend fun checkRoot(): RootStatus = withContext(Dispatchers.IO) {
+        val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown"
         val shell = Shell.getShell()
-        if (!shell.isRoot) return@withContext RootStatus(isRooted = false)
+        if (!shell.isRoot) return@withContext RootStatus(isRooted = false, architecture = arch)
 
-        val suPath      = Shell.cmd("which su").exec().out.firstOrNull()
-        val magiskVer   = Shell.cmd("magisk -v").exec().out.firstOrNull()
-        val ksuPresent  = Shell.cmd("ksud -V").exec().isSuccess
-        val apaPresent  = Shell.cmd("apd -V").exec().isSuccess
+        val suPath = Shell.cmd("which su").exec().out.firstOrNull()
+        val magiskVer = Shell.cmd("magisk -v").exec().out.firstOrNull()
+        val ksuPresent = Shell.cmd("ksud -V").exec().isSuccess
+        val apaPresent = Shell.cmd("apd -V").exec().isSuccess
 
         RootStatus(
-            isRooted         = true,
-            suBinaryPath     = suPath,
-            magiskVersion    = magiskVer,
-            kernelSuPresent  = ksuPresent,
-            apatchPresent    = apaPresent,
+            isRooted = true,
+            architecture = arch,
+            suBinaryPath = suPath,
+            magiskVersion = magiskVer,
+            kernelSuPresent = ksuPresent,
+            apatchPresent = apaPresent,
         )
     }
 

@@ -2,6 +2,7 @@ package com.fryda.app.presentation.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,19 +24,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fryda.app.core.root.RootChecker
-
-// --- Custom Colors matching your design ---
-private val DarkBackground = Color(0xFF282828)
-private val CardBackground = Color(0xFF333333)
-private val RootedGreen = Color(0xFF024634)
-private val DarkGreenChip = Color(0xFF015A42)
-private val AccentTeal = Color(0xFF38B29C)
-private val TextGray = Color(0xFFAAAAAA)
+import com.fryda.app.presentation.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,24 +42,6 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        containerColor = DarkBackground,
-        topBar = {
-            TopAppBar(
-                title = { }, // Title is handled in the scrollable content
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    actionIconContentColor = Color.White
-                ),
-                actions = {
-                    IconButton(onClick = onNavigateToLogs) {
-                        Icon(imageVector = Icons.Outlined.List, contentDescription = "Logs")
-                    }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(imageVector = Icons.Outlined.Settings, contentDescription = "Settings")
-                    }
-                }
-            )
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -80,12 +57,12 @@ fun HomeScreen(
                     text = "Fryda",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
                     text = "Frida Server Manager",
                     fontSize = 16.sp,
-                    color = TextGray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -93,9 +70,10 @@ fun HomeScreen(
             when (val state = uiState) {
                 is HomeUiState.Loading -> {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = AccentTeal)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
+
                 is HomeUiState.Success -> {
                     RootStatusCard(status = state.rootStatus)
                 }
@@ -120,10 +98,29 @@ fun HomeScreen(
 
 @Composable
 private fun RootStatusCard(status: RootChecker.RootStatus) {
-    val (bgColor, iconTint, title) = if (status.isRooted) {
-        Triple(RootedGreen, AccentTeal, "Device Rooted")
+    val isDark = isSystemInDarkTheme()
+
+    val bgColor: Color
+    val iconTint: Color
+    val title: String
+    val textColor: Color
+
+    if (status.isRooted) {
+        bgColor = if (isDark) RootedGreenDark else RootedGreenLight
+        iconTint = if (isDark) AccentTealDark else AccentTealLight
+        title = "Device Rooted"
+        textColor = if (isDark) Color.White else Color.Black
     } else {
-        Triple(Color(0xFF5A1E1E), Color(0xFFFF5252), "No Root Access")
+        bgColor = if (isDark) NotRootedBackgroundDark else NotRootedBackgroundLight
+        iconTint = if (isDark) NotRootedIconDark else NotRootedIconLight
+        title = "No Root Access"
+        textColor = if (isDark) Color.White else Color.Black
+    }
+
+    val chipBg = if (status.isRooted) {
+        if (isDark) DarkGreenChip else LightGreenChip
+    } else {
+        if (isDark) RedChipDark else RedChipLight
     }
 
     Card(
@@ -157,17 +154,17 @@ private fun RootStatusCard(status: RootChecker.RootStatus) {
                         text = title,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = textColor
                     )
                     Text(
                         text = if (status.isRooted) "frida-server can be started" else "Superuser access required",
                         fontSize = 14.sp,
-                        color = TextGray
+                        color = textColor.copy(alpha = 0.7f)
                     )
                 }
             }
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            HorizontalDivider(color = textColor.copy(alpha = 0.1f))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -175,17 +172,24 @@ private fun RootStatusCard(status: RootChecker.RootStatus) {
             ) {
                 InfoChip(
                     label = "MAGISK",
-                    value = status.magiskVersion ?: "N/A",
+                    // Fix: Added ?.substringBefore(":") here
+                    value = status.magiskVersion?.substringBefore(":") ?: "N/A",
+                    bgColor = chipBg,
+                    valueColor = iconTint,
                     modifier = Modifier.weight(1f)
                 )
                 InfoChip(
                     label = "SU",
                     value = status.suBinaryPath ?: "N/A",
+                    bgColor = chipBg,
+                    valueColor = iconTint,
                     modifier = Modifier.weight(1.3f)
                 )
                 InfoChip(
                     label = "ARCH",
-                    value = "arm64", // Replace with real ABI state if available
+                    value = status.architecture.substringBefore("-"),
+                    bgColor = chipBg,
+                    valueColor = iconTint,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -194,16 +198,34 @@ private fun RootStatusCard(status: RootChecker.RootStatus) {
 }
 
 @Composable
-private fun InfoChip(label: String, value: String, modifier: Modifier = Modifier) {
+private fun InfoChip(
+    label: String,
+    value: String,
+    bgColor: Color,
+    valueColor: Color,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(DarkGreenChip)
+            .background(bgColor)
             .padding(vertical = 10.dp, horizontal = 12.dp)
     ) {
         Column {
-            Text(text = label, fontSize = 10.sp, color = TextGray)
-            Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AccentTeal)
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                color = if (isSystemInDarkTheme()) TextGrayDark else TextGrayLight
+            )
+            Text(
+                text = value,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = valueColor,
+                maxLines = 1, // Forces single line
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -213,7 +235,7 @@ private fun ActiveServerCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
             modifier = Modifier
@@ -224,18 +246,18 @@ private fun ActiveServerCard() {
             Box(
                 modifier = Modifier
                     .size(8.dp)
-                    .background(AccentTeal, CircleShape)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "frida-server 16.3.3", color = Color.White, fontSize = 16.sp)
-                Text(text = "Port 27042 • PID 4821", color = TextGray, fontSize = 12.sp)
+                Text(text = "frida-server 16.3.3", color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+                Text(text = "Port 27042 • PID 4821", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
-            Text(text = "Running", color = TextGray, fontSize = 14.sp)
+            Text(text = "Running", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             Icon(
                 imageVector = Icons.Default.KeyboardArrowRight,
                 contentDescription = null,
-                tint = TextGray
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -246,27 +268,33 @@ private fun OverviewCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column {
             OverviewItem(
-                icon = Icons.Rounded.Info, // Use appropriate box/cube icon
+                icon = Icons.Rounded.Info,
                 iconBgColor = Color(0xFF1E3A5F),
                 iconColor = Color(0xFF64B5F6),
                 title = "Installed Versions",
                 value = "3"
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 16.dp))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
             OverviewItem(
                 icon = Icons.Outlined.PlayArrow,
                 iconBgColor = Color(0xFF1E4620),
-                iconColor = AccentTeal,
+                iconColor = MaterialTheme.colorScheme.primary,
                 title = "Running Servers",
                 value = "1"
             )
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 16.dp))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
             OverviewItem(
-                icon = Icons.Rounded.Info, // Use appropriate cpu/memory icon
+                icon = Icons.Rounded.Info,
                 iconBgColor = Color(0xFF3F1D53),
                 iconColor = Color(0xFFBA68C8),
                 title = "Device ABI",
@@ -299,17 +327,22 @@ private fun OverviewItem(
                 .background(iconBgColor, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(20.dp)
+            )
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text = title, color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f))
-        Text(text = value, color = Color.White, fontSize = 16.sp)
+        Text(text = title, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, modifier = Modifier.weight(1f))
+        Text(text = value, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
         if (showArrow) {
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.Default.KeyboardArrowRight,
                 contentDescription = null,
-                tint = TextGray,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -320,7 +353,7 @@ private fun OverviewItem(
 private fun SectionTitle(title: String) {
     Text(
         text = title,
-        color = AccentTeal,
+        color = MaterialTheme.colorScheme.primary,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         letterSpacing = 1.sp
