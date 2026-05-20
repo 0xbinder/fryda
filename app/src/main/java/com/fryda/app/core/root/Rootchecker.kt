@@ -16,6 +16,7 @@ class RootChecker @Inject constructor(
     data class RootStatus(
         val isRooted: Boolean,
         val architecture: String,
+        val androidVersion: String,
         val suBinaryPath: String? = null,
         val magiskVersion: String? = null,
         val kernelSuPresent: Boolean = false,
@@ -24,8 +25,13 @@ class RootChecker @Inject constructor(
 
     suspend fun checkRoot(): RootStatus = withContext(Dispatchers.IO) {
         val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown"
+        val androidVer = "Android ${Build.VERSION.RELEASE}"
         val shell = Shell.getShell()
-        if (!shell.isRoot) return@withContext RootStatus(isRooted = false, architecture = arch)
+        if (!shell.isRoot) return@withContext RootStatus(
+            isRooted = false,
+            architecture = arch,
+            androidVersion = androidVer
+        )
 
         val suPath = Shell.cmd("which su").exec().out.firstOrNull()
         val magiskVer = Shell.cmd("magisk -v").exec().out.firstOrNull()
@@ -35,6 +41,7 @@ class RootChecker @Inject constructor(
         RootStatus(
             isRooted = true,
             architecture = arch,
+            androidVersion = androidVer,
             suBinaryPath = suPath,
             magiskVersion = magiskVer,
             kernelSuPresent = ksuPresent,
