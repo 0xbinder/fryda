@@ -1,4 +1,4 @@
-package com.fryda.app.ui.theme
+package com.fryda.app.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
