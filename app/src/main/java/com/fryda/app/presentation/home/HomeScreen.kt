@@ -47,6 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fryda.app.presentation.home.components.BottomIconPill
+import com.fryda.app.presentation.home.components.PrimaryActionButton
+import com.fryda.app.presentation.home.components.TerminalInfoCard
 import com.fryda.app.presentation.theme.ActionCardBg
 import com.fryda.app.presentation.theme.HybridGradEnd
 import com.fryda.app.presentation.theme.HybridGradMiddle
@@ -54,7 +57,6 @@ import com.fryda.app.presentation.theme.HybridGradStart
 import com.fryda.app.presentation.theme.TerminalCardBg
 import com.fryda.app.presentation.theme.TerminalText
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -63,7 +65,8 @@ fun HomeScreen(
     onNavigateToReleases: () -> Unit,
     onNavigateToServers: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val uiState = state.toUiState()
     val isRefreshing = uiState is HomeUiState.Loading
     val refreshState = rememberPullToRefreshState()
 
@@ -97,9 +100,8 @@ fun HomeScreen(
                 ) {
                     Spacer(modifier = Modifier.height(60.dp))
 
-                    // --- HEADER SECTION ---
                     Text(
-                        text = "fryda", // Lowercase and bold
+                        text = "fryda",
                         fontSize = 46.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-1.5).sp,
@@ -134,156 +136,6 @@ fun HomeScreen(
                         onLogsClick = onNavigateToLogs
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TerminalInfoCard(uiState: HomeUiState) {
-    Surface(
-        color = TerminalCardBg,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Welcome to fryda manager",
-                color = Color.White,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            when (uiState) {
-                is HomeUiState.Loading -> {
-                    TerminalTextLine("Initializing environment...")
-                    TerminalTextLine("Checking root privileges...")
-                }
-                is HomeUiState.Success -> {
-                    val status = uiState.rootStatus
-
-                    TerminalTextLine("OS Version: ${status.androidVersion}")
-                    TerminalTextLine("Architecture: ${status.architecture}")
-
-                    val rootEnv = when {
-                        status.kernelSuPresent -> "KernelSU"
-                        status.apatchPresent -> "APatch"
-                        status.magiskVersion != null -> "Magisk ${status.magiskVersion.substringBefore(":")}"
-                        else -> "None"
-                    }
-                    TerminalTextLine("Environment: $rootEnv")
-
-                    if (status.isRooted && !status.suBinaryPath.isNullOrBlank()) {
-                        TerminalTextLine("Path: ${status.suBinaryPath}")
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (status.isRooted) "Status: Privileged" else "Status: Rootless / Restricted",
-                        color = if (status.isRooted) Color(0xFFA5D6A7) else Color(0xFFEF9A9A),
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TerminalTextLine(text: String) {
-    Text(
-        text = text,
-        color = TerminalText,
-        fontFamily = FontFamily.Monospace,
-        fontSize = 12.sp,
-        lineHeight = 18.sp
-    )
-}
-
-@Composable
-private fun PrimaryActionButton(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Surface(
-        color = ActionCardBg,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() }
-    ) {
-        Row(
-            modifier = Modifier.padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun BottomIconPill(
-    onSettingsClick: () -> Unit,
-    onLogsClick: () -> Unit
-) {
-    Surface(
-        color = TerminalCardBg, // Matches the dark translucent feel
-        shape = CircleShape,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            IconButton(
-                onClick = onSettingsClick,
-                modifier = Modifier.background(Color.White.copy(alpha = 0.15f), CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = "Settings",
-                    tint = Color.White
-                )
-            }
-
-            IconButton(
-                onClick = onLogsClick,
-                modifier = Modifier.background(Color.White.copy(alpha = 0.15f), CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Description,
-                    contentDescription = "Logs",
-                    tint = Color.White
-                )
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.fryda.app.domain.use_cases
+package com.fryda.app.domain.use_cases.frida_release_use_case
 
 import com.fryda.app.core.constants.Result
 import com.fryda.app.domain.model.FridaRelease
