@@ -7,4 +7,7 @@ object Constants {
     const val RELEASES_ENDPOINT = "repos/frida/frida/releases"
     const val RELEASE_BY_TAG_ENDPOINT = "repos/frida/frida/releases/tags/{tag}"
     const val LATEST_RELEASE_ENDPOINT = "repos/frida/frida/releases/latest"
+
+    const val PER_PAGE = 10;
+    const val PAGE = 1;
 }

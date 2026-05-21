@@ -23,7 +23,6 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                 ) { innerPadding ->
-                    // Pass innerPadding to NavGraph instead of a Box wrapper
                     NavGraph(
                         navController = navController,
                         paddingValues = innerPadding

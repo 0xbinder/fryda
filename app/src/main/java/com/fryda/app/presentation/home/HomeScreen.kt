@@ -25,7 +25,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fryda.app.core.root.RootChecker
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -36,7 +35,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Track refresh state for the pull-to-refresh animation
     val isRefreshing = uiState is HomeUiState.Loading
     val refreshState = rememberPullToRefreshState()
 
@@ -94,10 +92,8 @@ fun HomeScreen(
                     }
                 }
 
-                // 2. Root Status Header
                 when (val state = uiState) {
                     is HomeUiState.Loading -> {
-                        // We show a small indicator if we're not using the pull-indicator
                         if (!refreshState.isAnimating) {
                             LinearProgressIndicator(
                                 modifier = Modifier
