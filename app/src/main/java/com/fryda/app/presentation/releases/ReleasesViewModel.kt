@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.fryda.app.core.constants.Constants
 import com.fryda.app.core.constants.Result
 import com.fryda.app.domain.use_cases.FridaReleaseUseCases
+import com.fryda.app.domain.use_cases.GetFridaReleaseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReleasesViewModel @Inject constructor(
-    private val useCases: FridaReleaseUseCases
+    private val useCases: FridaReleaseUseCases,
+    private val getFridaReleaseUseCase: GetFridaReleaseUseCase // Added search UseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReleasesState())
@@ -55,7 +57,6 @@ class ReleasesViewModel @Inject constructor(
                         )
                     }
                 }
-
                 is Result.Error -> {
                     _state.update {
                         it.copy(
@@ -66,9 +67,46 @@ class ReleasesViewModel @Inject constructor(
                         )
                     }
                 }
-
                 else -> {}
             }
+        }
+    }
+
+
+    fun onSearchQueryChanged(query: String) {
+        _state.update { it.copy(searchQuery = query) }
+        if (query.isBlank()) {
+            clearSearch()
+        }
+    }
+
+    fun searchRelease() {
+        val query = _state.value.searchQuery.trim()
+        if (query.isBlank()) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSearching = true, searchError = null, searchResult = null) }
+
+            when (val result = getFridaReleaseUseCase(query)) {
+                is Result.Success -> {
+                    _state.update { it.copy(isSearching = false, searchResult = result.data) }
+                }
+                is Result.Error -> {
+                    _state.update { it.copy(isSearching = false, searchError = result.errorMessage() ?: "Release not found") }
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _state.update {
+            it.copy(
+                searchQuery = "",
+                searchResult = null,
+                searchError = null,
+                isSearching = false
+            )
         }
     }
 }

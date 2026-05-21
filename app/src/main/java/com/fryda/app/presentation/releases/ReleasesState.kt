@@ -9,5 +9,9 @@ data class ReleasesState(
     val isPaginating: Boolean = false,
     val error: String? = null,
     val currentPage: Int = 1,
-    val endReached: Boolean = false
+    val endReached: Boolean = false,
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    val searchResult: FridaRelease? = null,
+    val searchError: String? = null
 )
