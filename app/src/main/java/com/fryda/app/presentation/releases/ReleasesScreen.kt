@@ -2,100 +2,157 @@ package com.fryda.app.presentation.releases
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.rounded.CloudDownload
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fryda.app.domain.model.FridaRelease
-import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.TimeZone
+import com.fryda.app.presentation.theme.* // Make sure to import your theme colors
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReleasesScreen(
     viewModel: ReleasesViewModel = hiltViewModel(),
-    onNavigateToReleaseDetails: (String) -> Unit // Pass the tag/version to the next screen
+    onNavigateToReleaseDetails: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
 
-    Scaffold { paddingValues ->
-        Column(
+    // Complex diagonal gradient (Teal -> Slate -> Olive) to match Home
+    val backgroundBrush = remember {
+        Brush.linearGradient(
+            colors = listOf(HybridGradStart, HybridGradMiddle, HybridGradEnd)
+        )
+    }
+
+    // Detect when we reach the end of the list to load more
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull() ?: return@derivedStateOf false
+            lastVisibleItem.index >= listState.layoutInfo.totalItemsCount - 2
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value && !state.endReached) {
+            viewModel.loadReleases()
+        }
+    }
+
+    Scaffold(
+        containerColor = Color.Transparent, // Let the background brush show through
+        contentWindowInsets = WindowInsets(0, 0, 0, 0) // Allows drawing behind system bars
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .background(backgroundBrush) // Full screen gradient
         ) {
-            // Screen Header
-            Column(modifier = Modifier.padding(top = 16.dp)) {
-                Text(
-                    text = "Releases",
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "Official GitHub Repository",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // State Handling
-            when (val state = uiState) {
-                is ReleasesUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = { viewModel.loadReleases(isRefresh = true) },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = paddingValues.calculateBottomPadding())
+            ) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally // Centered vibe
+                ) {
+                    // 1. SCROLLABLE HEADER
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .statusBarsPadding() // Keeps text below the notch/camera
+                                .padding(top = 40.dp, bottom = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "releases", // Lowercase and bold to match home
+                                fontSize = 42.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-1.5).sp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "official frida distribution",
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp,
+                                color = DopaTextSecondary
+                            )
+                        }
                     }
+
+                    // 2. ERROR STATE
+                    if (state.error != null && state.releases.isEmpty()) {
+                        item {
+                            ErrorState(message = state.error!!, onRetry = { viewModel.loadReleases() })
+                        }
+                    }
+
+                    // 3. RELEASES LIST
+                    itemsIndexed(
+                        items = state.releases,
+                        key = { _, release -> release.tagName }
+                    ) { index, release ->
+                        if (index == 0) {
+                            SectionHeader("LATEST VERSION")
+                        } else if (index == 1) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            SectionHeader("PREVIOUS RELEASES")
+                        }
+
+                        ReleaseCard(
+                            release = release,
+                            onClick = { onNavigateToReleaseDetails(release.tagName) }
+                        )
+                    }
+
+                    // 4. BOTTOM LOADING INDICATOR (Pagination)
+                    if (state.isPaginating) {
+                        item {
+                            Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    item { Spacer(modifier = Modifier.height(48.dp)) }
                 }
 
-                is ReleasesUiState.Error -> {
-                    ErrorState(
-                        message = state.message,
-                        onRetry = { viewModel.loadReleases() }
-                    )
-                }
-
-                is ReleasesUiState.Success -> {
-                    ReleasesList(
-                        releases = state.releases,
-                        onReleaseClick = { onNavigateToReleaseDetails(it.tagName) }
+                // Initial Loading Center
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.White
                     )
                 }
             }
@@ -104,113 +161,65 @@ fun ReleasesScreen(
 }
 
 @Composable
-private fun ReleasesList(
-    releases: List<FridaRelease>,
-    onReleaseClick: (FridaRelease) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
-    ) {
-        itemsIndexed(releases) { index, release ->
-            // Section Titles
-            if (index == 0) {
-                SectionTitle("LATEST RELEASE")
-                Spacer(modifier = Modifier.height(8.dp))
-            } else if (index == 1) {
-                Spacer(modifier = Modifier.height(12.dp))
-                SectionTitle("PREVIOUS RELEASES")
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            ReleaseCard(
-                release = release,
-                onClick = { onReleaseClick(release) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ReleaseCard(
-    release: FridaRelease,
-    onClick: () -> Unit
-) {
-    val isDark = isSystemInDarkTheme()
-    val formattedDate = remember(release.publishedAt) { formatDateString(release.publishedAt) }
-
-    Card(
+private fun ReleaseCard(release: FridaRelease, onClick: () -> Unit) {
+    Surface(
+        color = ActionCardBg, // Translucent glassmorphism
+        shape = RoundedCornerShape(20.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            .clip(RoundedCornerShape(20.dp))
+            .clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Leading Icon (Highlights if it's the latest release)
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(
-                        color = if (release.isLatest) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            // Icon Background
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape, // Circular icon backgrounds look better here
+                color = TerminalCardBg // Darker translucent
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.CloudDownload,
-                    contentDescription = "Download Release",
-                    tint = if (release.isLatest) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
+                    Icons.Rounded.CloudDownload,
+                    contentDescription = null,
+                    modifier = Modifier.padding(12.dp),
+                    tint = if (release.isLatest) Color(0xFFA5D6A7) else Color.White // Highlight latest
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Text Content
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Frida ${release.version}",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "v${release.version}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
-
-                    // Show small "Latest" badge next to the title
                     if (release.isLatest) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        Spacer(Modifier.width(8.dp))
+                        // Custom Glassmorphism Badge
+                        Surface(
+                            color = Color.White.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 text = "LATEST",
                                 fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                fontWeight = FontWeight.Black,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                // Show Date and Asset count
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "$formattedDate • ${release.assets.size} Android Assets",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp
+                    text = "${release.assets.size} assets • ${release.publishedAt.take(10)}",
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace, // Keep the terminal vibe
+                    color = DopaTextSecondary
                 )
             }
         }
@@ -218,63 +227,52 @@ private fun ReleaseCard(
 }
 
 @Composable
-private fun ErrorState(
-    message: String,
-    onRetry: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Failed to load releases",
-            color = MaterialTheme.colorScheme.error,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Retry")
-        }
-    }
-}
-
-@Composable
-private fun SectionTitle(title: String) {
+private fun SectionHeader(title: String) {
     Text(
         text = title,
-        color = MaterialTheme.colorScheme.primary,
+        fontFamily = FontFamily.Monospace,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 1.sp
+        color = DopaTextSecondary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center // Centered headers
     )
 }
 
-/**
- * Utility function to convert ISO 8601 GitHub Date string to readable format.
- * "2023-10-18T12:00:00Z" -> "Oct 18, 2023"
- */
-private fun formatDateString(dateString: String): String {
-    return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
+@Composable
+private fun ErrorState(message: String, onRetry: () -> Unit) {
+    Surface(
+        color = TerminalCardBg,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = message,
+                color = Color(0xFFEF9A9A),
+                fontFamily = FontFamily.Monospace,
+                fontSize = 13.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Surface(
+                color = ActionCardBg,
+                shape = CircleShape,
+                modifier = Modifier.clip(CircleShape).clickable { onRetry() }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.Refresh, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Retry", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
         }
-        val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-        val date = parser.parse(dateString)
-        if (date != null) formatter.format(date) else dateString
-    } catch (e: Exception) {
-        dateString // Fallback to raw string if parsing fails
     }
 }
