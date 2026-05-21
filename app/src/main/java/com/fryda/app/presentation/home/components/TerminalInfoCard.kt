@@ -73,6 +73,8 @@ import com.fryda.app.presentation.theme.TerminalCardBg
                         fontWeight = FontWeight.Bold
                     )
                 }
+
+                else -> {}
             }
         }
     }

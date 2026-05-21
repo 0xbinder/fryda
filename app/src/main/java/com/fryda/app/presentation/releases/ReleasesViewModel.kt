@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fryda.app.core.constants.Constants
 import com.fryda.app.core.constants.Result
-import com.fryda.app.domain.use_cases.FridaReleaseUseCases
-import com.fryda.app.domain.use_cases.GetFridaReleaseUseCase
+import com.fryda.app.domain.use_cases.frida_release_use_case.FridaReleaseUseCases
+import com.fryda.app.domain.use_cases.frida_release_use_case.GetFridaReleaseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

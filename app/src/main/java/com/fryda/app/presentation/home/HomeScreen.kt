@@ -65,7 +65,8 @@ fun HomeScreen(
     onNavigateToReleases: () -> Unit,
     onNavigateToServers: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val uiState = state.toUiState()
     val isRefreshing = uiState is HomeUiState.Loading
     val refreshState = rememberPullToRefreshState()
 

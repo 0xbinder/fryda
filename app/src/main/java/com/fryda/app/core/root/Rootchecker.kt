@@ -2,6 +2,7 @@ package com.fryda.app.core.root
 
 import android.content.Context
 import android.os.Build
+import com.fryda.app.domain.model.RootStatus
 import com.topjohnwu.superuser.Shell
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -13,16 +14,6 @@ import javax.inject.Singleton
 class RootChecker @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    data class RootStatus(
-        val isRooted: Boolean,
-        val architecture: String,
-        val androidVersion: String,
-        val suBinaryPath: String? = null,
-        val magiskVersion: String? = null,
-        val kernelSuPresent: Boolean = false,
-        val apatchPresent: Boolean = false,
-    )
-
     suspend fun checkRoot(): RootStatus = withContext(Dispatchers.IO) {
         val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown"
         val androidVer = "Android ${Build.VERSION.RELEASE}"
