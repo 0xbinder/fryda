@@ -25,8 +25,7 @@ fun NavGraph(
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                onNavigateToLogs = { navController.navigate(Screen.Logs.route) },
-                onNavigateToServers = {}
+                onNavigateToLogs = { navController.navigate(Screen.Logs.route) }
             )
         }
         composable(Screen.Servers.route) {

@@ -51,6 +51,7 @@ dependencies {
     // retrofit 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
 
     // shell su
     implementation(libs.libsu.core)

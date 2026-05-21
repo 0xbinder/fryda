@@ -14,12 +14,10 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     private val rootChecker: RootChecker
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        // Automatically check root status when the ViewModel is created (Screen launched)
         checkRoot()
     }
 
@@ -27,7 +25,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
 
-            // Suspend and wait for the root check to complete
             val status = rootChecker.checkRoot()
 
             _uiState.value = HomeUiState.Success(status)
