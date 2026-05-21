@@ -1,4 +1,3 @@
-// presentation/home/HomeUiState.kt
 package com.fryda.app.presentation.home
 
 import com.fryda.app.domain.model.RootStatus
